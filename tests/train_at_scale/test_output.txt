@@ -6,112 +6,21 @@ configfile: pytest_kitt.ini
 collecting ... collected 8 items
 
 tests/train_at_scale/test_clean.py::test_clean_data PASSED               [ 12%]
-tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_preprocess_and_train FAILED [ 25%]
+tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_preprocess_and_train PASSED [ 25%]
 tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_pred PASSED [ 37%]
 tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_preprocess FAILED [ 50%]
-tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_train FAILED [ 62%]
+tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_train PASSED [ 62%]
 tests/train_at_scale/test_model.py::test_model_can_fit PASSED            [ 75%]
 tests/train_at_scale/test_notebook.py::TestNotebook::test_y_pred PASSED  [ 87%]
 tests/train_at_scale/test_processor_pipeline.py::test_preprocess_features PASSED [100%]
 
 =================================== FAILURES ===================================
-________________ TestMainLocal.test_route_preprocess_and_train _________________
-
-self = <tests.train_at_scale.test_main_local.TestMainLocal object at 0x11b357970>
-
-    def test_route_preprocess_and_train(self):
-    
-        # 1) SETUP
-        data_query_path = Path(LOCAL_DATA_PATH).joinpath("raw",f"query_{MIN_DATE}_{MAX_DATE}_{DATA_SIZE}.csv")
-        data_query_exists = data_query_path.is_file()
-    
-        if data_query_exists:
-            # We start from a blank state. No cached files
-            shutil.copyfile(data_query_path, f'{data_query_path}_backup')
-            data_query_path.unlink()
-    
-        # 2) ACT
-        from taxifare.interface.main_local import preprocess_and_train
-    
-        # Check route runs correctly
->       preprocess_and_train(min_date=MIN_DATE, max_date=MAX_DATE)
-
-tests/train_at_scale/test_main_local.py:36: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-taxifare/interface/main_local.py:96: in preprocess_and_train
-    model, history = train_model(model=model,
-taxifare/ml_logic/model.py:64: in train_model
-    history = model.fit(X,y,epochs=100,
-../../../../../.pyenv/versions/3.10.6/envs/taxifare-env/lib/python3.10/site-packages/keras/utils/traceback_utils.py:70: in error_handler
-    raise e.with_traceback(filtered_tb) from None
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-value = array([[0.0, 0.0, 0.0, ..., 0.0, 0.0, 0.0],
-       [0.5714285714285714, 1.0, 0.0, ..., 0.0, 0.0, 0.0],
-       [0.0, 0.... 0.0, 0.0, 0.0],
-       [0.0, 1.0, 0.0, ..., 0.0, 0.0, 0.0],
-       [0.0, 0.0, 1.0, ..., 0.0, 0.0, 0.0]], dtype=object)
-ctx = <tensorflow.python.eager.context.Context object at 0x28490bbb0>
-dtype = None
-
-    def convert_to_eager_tensor(value, ctx, dtype=None):
-      """Converts the given `value` to an `EagerTensor`.
-    
-      Note that this function could return cached copies of created constants for
-      performance reasons.
-    
-      Args:
-        value: value to convert to EagerTensor.
-        ctx: value of context.context().
-        dtype: optional desired dtype of the converted EagerTensor.
-    
-      Returns:
-        EagerTensor created from value.
-    
-      Raises:
-        TypeError: if `dtype` is not compatible with the type of t.
-      """
-      if isinstance(value, ops.EagerTensor):
-        if dtype is not None and value.dtype != dtype:
-          raise TypeError(f"Expected tensor {value} with dtype {dtype!r}, but got "
-                          f"dtype {value.dtype!r}.")
-        return value
-      if dtype is not None:
-        try:
-          dtype = dtype.as_datatype_enum
-        except AttributeError:
-          dtype = dtypes.as_dtype(dtype).as_datatype_enum
-      ctx.ensure_initialized()
->     return ops.EagerTensor(value, ctx.device_name, dtype)
-E     ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type float).
-
-../../../../../.pyenv/versions/3.10.6/envs/taxifare-env/lib/python3.10/site-packages/tensorflow/python/framework/constant_op.py:102: ValueError
------------------------------ Captured stdout call -----------------------------
-[34m
-Loading TensorFlow...[0m
-
-✅ TensorFlow loaded (0.0s)
-[35m
- ⭐️ Use case: preprocess_and_train[0m
-Loading data from Querying Big Query server...
-old dataframe size:  0.02 MB
-optimized size by 47.0 %
-new DataFrame size:  0.01  MB
-✅ data cleaned
-[34m
-Preprocessing features...[0m
-✅ X_processed, with shape (431, 65)
-[34m
-Preprocessing features...[0m
-✅ X_processed, with shape (8, 65)
-✅ Model initialized
-✅ Model compiled
 _____________________ TestMainLocal.test_route_preprocess ______________________
 
-self = <tests.train_at_scale.test_main_local.TestMainLocal object at 0x11b357c10>
+self = <tests.train_at_scale.test_main_local.TestMainLocal object at 0x121ca7cd0>
 fixture_query_1k =      fare_amount           pickup_datetime  ...  dropoff_latitude  passenger_count
-0       8.900000 2009-01-15 09:22:3...           4
-454     8.500000 2014-12-27 16:47:42+00:00  ...         40.771263                4
+0            8.9 2009-01-15 09:22:3...           4
+454          8.5 2014-12-27 16:47:42+00:00  ...         40.771263                4
 
 [455 rows x 7 columns]
 fixture_processed_1k =            0    1    2    3    4    5   ...   60   61   62   63   64         65
@@ -121,37 +30,74 @@ fixture_processed_1k =            0    1    2    3    4    5   ...   60   61   6
 [447 rows x 66 columns]
 
     def test_route_preprocess(self, fixture_query_1k: pd.DataFrame, fixture_processed_1k: pd.DataFrame):
->       from taxifare.interface.main_local import preprocess
-E       ImportError: cannot import name 'preprocess' from 'taxifare.interface.main_local' (/Users/gasparburgi/code/GasparinB/07-ML-Ops/01-Train-at-scale/data-train-at-scale/taxifare/interface/main_local.py)
-
-tests/train_at_scale/test_main_local.py:67: ImportError
-________________________ TestMainLocal.test_route_train ________________________
-
-self = <tests.train_at_scale.test_main_local.TestMainLocal object at 0x11b357b50>
-
-    def test_route_train(self):
+        from taxifare.interface.main_local import preprocess
+    
+        data_query_path = Path(LOCAL_DATA_PATH).joinpath("raw",f"query_{MIN_DATE}_{MAX_DATE}_{DATA_SIZE}.csv")
+        data_processed_path = Path(LOCAL_DATA_PATH).joinpath("processed",f"processed_{MIN_DATE}_{MAX_DATE}_{DATA_SIZE}.csv")
+    
+        data_query_exists = data_query_path.is_file()
+        data_processed_exists = data_processed_path.is_file()
     
         # SETUP
-        data_processed_path = Path(LOCAL_DATA_PATH).joinpath("processed",f"processed_{MIN_DATE}_{MAX_DATE}_{DATA_SIZE}.csv")
-        data_processed_exists = data_processed_path.is_file()
+        if data_query_exists:
+            shutil.copyfile(data_query_path, f'{data_query_path}_backup')
+            data_query_path.unlink()
         if data_processed_exists:
             shutil.copyfile(data_processed_path, f'{data_processed_path}_backup')
             data_processed_path.unlink()
     
-        data_processed_fixture_path = "https://storage.googleapis.com/datascience-mlops/taxi-fare-ny/solutions/data_processed_fixture_2009-01-01_2015-01-01_1k.csv"
-        os.system(f"curl {data_processed_fixture_path} > {data_processed_path}")
-    
         # ACT
->       from taxifare.interface.main_local import train
-E       ImportError: cannot import name 'train' from 'taxifare.interface.main_local' (/Users/gasparburgi/code/GasparinB/07-ML-Ops/01-Train-at-scale/data-train-at-scale/taxifare/interface/main_local.py)
+        # Check route runs querying Big Query
+>       preprocess(min_date=MIN_DATE, max_date=MAX_DATE)
 
-tests/train_at_scale/test_main_local.py:126: ImportError
------------------------------ Captured stderr call -----------------------------
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  153k  100  153k    0     0   876k      0 --:--:-- --:--:-- --:--:--  884k
+tests/train_at_scale/test_main_local.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+taxifare/interface/main_local.py:179: in preprocess
+    chunk_processed.to_csv(data_processed_path,mode='w' if chunk_id==0 else 'a',header=False,index=False)
+taxifare/interface/main_local.py:179: in preprocess
+    chunk_processed.to_csv(data_processed_path,mode='w' if chunk_id==0 else 'a',header=False,index=False)
+../../../../../.pyenv/versions/3.10.6/lib/python3.10/bdb.py:90: in trace_dispatch
+    return self.dispatch_line(frame)
+../../../../../.pyenv/versions/3.10.6/lib/python3.10/bdb.py:114: in dispatch_line
+    self.user_line(frame)
+../../../../../.pyenv/versions/3.10.6/lib/python3.10/pdb.py:262: in user_line
+    self.interaction(frame, None)
+../../../../../.pyenv/versions/3.10.6/envs/taxifare-env/lib/python3.10/site-packages/IPython/core/debugger.py:455: in interaction
+    OldPdb.interaction(self, frame, tb)
+../../../../../.pyenv/versions/3.10.6/lib/python3.10/pdb.py:357: in interaction
+    self._cmdloop()
+../../../../../.pyenv/versions/3.10.6/lib/python3.10/pdb.py:322: in _cmdloop
+    self.cmdloop()
+../../../../../.pyenv/versions/3.10.6/lib/python3.10/cmd.py:126: in cmdloop
+    line = input(self.prompt)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_pytest.capture.DontReadFromInput object at 0x104037790>, size = -1
+
+    def read(self, size: int = -1) -> str:
+>       raise OSError(
+            "pytest: reading from stdin while output is captured!  Consider using `-s`."
+        )
+E       OSError: pytest: reading from stdin while output is captured!  Consider using `-s`.
+
+../../../../../.pyenv/versions/3.10.6/envs/taxifare-env/lib/python3.10/site-packages/_pytest/capture.py:202: OSError
+----------------------------- Captured stdout call -----------------------------
+[35m
+ ⭐️ Use case: preprocess by batch[0m
+Get a dataframe iterable from Querying Big Query server...
+processing chunk 0...
+✅ data cleaned
+clean_data executed in 0.02 seconds, using up to 0.06MB of RAM
+[34m
+Preprocessing features...[0m
+✅ X_processed, with shape (253, 65)
+preprocess_features executed in 0.09 seconds, using up to 0.39MB of RAM
+> [0;32m/Users/gasparburgi/code/GasparinB/07-ML-Ops/01-Train-at-scale/data-train-at-scale/taxifare/interface/main_local.py[0m(179)[0;36mpreprocess[0;34m()[0m
+[0;32m    178 [0;31m        [0mbreakpoint[0m[0;34m([0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[0m[0;32m--> 179 [0;31m        [0mchunk_processed[0m[0;34m.[0m[0mto_csv[0m[0;34m([0m[0mdata_processed_path[0m[0;34m,[0m[0mmode[0m[0;34m=[0m[0;34m'w'[0m [0;32mif[0m [0mchunk_id[0m[0;34m==[0m[0;36m0[0m [0;32melse[0m [0;34m'a'[0m[0;34m,[0m[0mheader[0m[0;34m=[0m[0;32mFalse[0m[0;34m,[0m[0mindex[0m[0;34m=[0m[0;32mFalse[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[0m[0;32m    180 [0;31m[0;34m[0m[0m
+[0m
+ipdb> 
 =========================== short test summary info ============================
-FAILED tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_preprocess_and_train
 FAILED tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_preprocess
-FAILED tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_train
-================== 3 failed, 5 passed, 109 warnings in 10.03s ==================
+================== 1 failed, 7 passed, 118 warnings in 20.07s ==================
