@@ -40,37 +40,63 @@ def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01
 
     if data_query_cached_exists:
         print("Loading data from local CSV...")
-
-        # YOUR CODE HERE
+        df = pd.read_csv(data_query_cache_path, parse_dates=['pickup_datetime'])
 
     else:
         print("Loading data from Querying Big Query server...")
+        from google.cloud import bigquery
 
-        # YOUR CODE HERE
+        client = bigquery.Client(project=GCP_PROJECT)
+        query_job = client.query(query)
+        result = query_job.result()
+        df = result.to_dataframe()
 
-        # Save it locally to accelerate the next queries!
-        data.to_csv(data_query_cache_path, header=True, index=False)
+        df.to_csv(data_query_cache_path, header=True, index=False)
 
     # Clean data using data.py
-    # YOUR CODE HERE
-
+    df = clean_data(df)
     # Create (X_train, y_train, X_val, y_val) without data leaks
     # No need for test sets, we'll report val metrics only
     split_ratio = 0.02 # About one month of validation data
+    test_length = int(len(df) * split_ratio)
+    val_length = int((len(df)-test_length) * split_ratio)
+    train_length = len(df) - val_length - test_length
 
-    # YOUR CODE HERE
+    df_train = df.iloc[:train_length, :].sample(frac=1) # Shuffle datasets to improve training
+    df_val = df.iloc[train_length: train_length + val_length, :].sample(frac=1)
+    df_test = df.iloc[train_length+val_length:, :].sample(frac=1)
+    X = df.drop("fare_amount", axis=1)
+    y = df[["fare_amount"]]
+
+    X_train = df_train.drop("fare_amount", axis=1)
+    y_train = df_train[["fare_amount"]]
+
+    X_val = df_val.drop("fare_amount", axis=1)
+    y_val = df_val[["fare_amount"]]
+
+    X_test = df_test.drop("fare_amount", axis=1)
+    y_test = df_test[["fare_amount"]]
 
     # Create (X_train_processed, X_val_processed) using `preprocessor.py`
     # Luckily, our preprocessor is stateless: we can `fit_transform` both X_train and X_val without data leakage!
     # YOUR CODE HERE
 
+    X_train_processed = preprocess_features(X_train)
+    X_val_processed = preprocess_features(X_val)
+
+
     # Train a model on the training set, using `model.py`
-    model = None
+    model = initialize_model(input_shape=X_train_processed.shape[1:])
     learning_rate = 0.0005
     batch_size = 256
     patience = 2
 
-    # YOUR CODE HERE
+    model = compile_model(model=model,learning_rate=learning_rate)
+
+    model, history = train_model(model=model,
+                                X=X_train_processed,y=y_train,
+                                batch_size=batch_size,
+                                patience=patience)
 
     # Compute the validation metric (min val_mae) of the holdout set
     val_mae = np.min(history.history['val_mae'])
