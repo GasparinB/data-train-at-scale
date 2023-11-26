@@ -116,20 +116,13 @@ def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01
 
 def preprocess(min_date: str = '2009-01-01', max_date: str = '2015-01-01') -> None:
     """
-    Query and preprocess the raw dataset iteratively (by chunks).
-    Then store the newly processed (and raw) data on local hard-drive for later re-use.
+    1. Query and preprocess the raw dataset iteratively (in chunks)
+    2. Store the newly processed (and raw) data on your local hard drive for later use
 
-    - If raw data already exists on local disk:
-        - use `pd.read_csv(..., chunksize=CHUNK_SIZE)`
-
-    - If raw data does not yet exists:
-        - use `bigquery.Client().query().result().to_dataframe_iterable()`
-
+    - If raw data already exists on your local disk, use `pd.read_csv(..., chunksize=CHUNK_SIZE)`
+    - If raw data does NOT yet exist, use `bigquery.Client().query().result().to_dataframe_iterable()`
     """
     print(Fore.MAGENTA + "\n ⭐️ Use case: preprocess by batch" + Style.RESET_ALL)
-
-    from taxifare.ml_logic.data import clean_data
-    from taxifare.ml_logic.preprocessor import preprocess_features
 
     min_date = parse(min_date).strftime('%Y-%m-%d') # e.g '2009-01-01'
     max_date = parse(max_date).strftime('%Y-%m-%d') # e.g '2009-01-01'
@@ -140,53 +133,81 @@ def preprocess(min_date: str = '2009-01-01', max_date: str = '2015-01-01') -> No
         WHERE pickup_datetime BETWEEN '{min_date}' AND '{max_date}'
         ORDER BY pickup_datetime
         """
-    # Retrieve `query` data as dataframe iterable
+    # Retrieve `query` data as a DataFrame iterable
     data_query_cache_path = Path(LOCAL_DATA_PATH).joinpath("raw", f"query_{min_date}_{max_date}_{DATA_SIZE}.csv")
     data_processed_path = Path(LOCAL_DATA_PATH).joinpath("processed", f"processed_{min_date}_{max_date}_{DATA_SIZE}.csv")
 
     data_query_cache_exists = data_query_cache_path.is_file()
     if data_query_cache_exists:
-        print("Get a dataframe iterable from local CSV...")
-        chunks = pd.read_csv(data_query_cache_path, parse_dates=['pickup_datetime'],chunksize=CHUNK_SIZE)
+        print("Get a DataFrame iterable from local CSV...")
+        chunks = None
 
+        # $CODE_BEGIN
+        chunks = pd.read_csv(
+            data_query_cache_path,
+            chunksize=CHUNK_SIZE,
+            parse_dates=["pickup_datetime"]
+        )
+        # $CODE_END
     else:
-        print("Get a dataframe iterable from Querying Big Query server...")
-        # 🎯 Hints: `bigquery.Client(...).query(...).result(page_size=...).to_dataframe_iterable()
+        print("Get a DataFrame iterable from querying the BigQuery server...")
+        chunks = None
+
+        # 🎯 HINT: `bigquery.Client(...).query(...).result(page_size=...).to_dataframe_iterable()`
+        # $CODE_BEGIN
         client = bigquery.Client(project=GCP_PROJECT)
+
         query_job = client.query(query)
         result = query_job.result(page_size=CHUNK_SIZE)
+
         chunks = result.to_dataframe_iterable()
+        # $CODE_END
+
     for chunk_id, chunk in enumerate(chunks):
-        print(f"processing chunk {chunk_id}...")
+        print(f"Processing chunk {chunk_id}...")
 
         # Clean chunk
-        clean_chunk = clean_data(chunk)
+        # $CODE_BEGIN
+        chunk_clean = clean_data(chunk)
+        # $CODE_END
 
         # Create chunk_processed
-        # 🎯 Hints: Create (`X_chunk`, `y_chunk`), process only `X_processed_chunk`, then concatenate (X_processed_chunk, y_chunk)
-        # YOUR CODE HERE
-
-        X_chunk = clean_chunk.drop("fare_amount", axis=1)
-        y_chunk = clean_chunk[["fare_amount"]]
+        # 🎯 HINT: create (`X_chunk`, `y_chunk`), process only `X_processed_chunk`, then concatenate (X_processed_chunk, y_chunk)
+        # $CODE_BEGIN
+        X_chunk = chunk_clean.drop("fare_amount", axis=1)
+        y_chunk = chunk_clean[["fare_amount"]]
         X_processed_chunk = preprocess_features(X_chunk)
-        X_processed_chunk = pd.DataFrame(X_processed_chunk)
-        chunk_processed = pd.concat([X_processed_chunk,y_chunk],axis=1)
-        # Save and append the processed chunk to a local CSV at "data_processed_path"
-        # 🎯 Hints: df.to_csv(mode=...)
-        # 🎯 Hints: We want a CSV without index nor headers (they'd be meaningless)
-        # YOUR CODE HERE
-        breakpoint()
-        chunk_processed.to_csv(data_processed_path,mode='w' if chunk_id==0 else 'a',header=False,index=False)
 
-        # Save and append the raw chunk if not `data_query_cache_exists`
+        chunk_processed = pd.DataFrame(np.concatenate((X_processed_chunk, y_chunk), axis=1))
+        # $CODE_END
+
+        # Save and append the processed chunk to a local CSV at "data_processed_path"
+        # 🎯 HINT: df.to_csv(mode=...)
+        # 🎯 HINT: we want a CSV with neither index nor headers (they'd be meaningless)
+        # $CODE_BEGIN
+        chunk_processed.to_csv(
+            data_processed_path,
+            mode="w" if chunk_id==0 else "a",
+            header=False,
+            index=False,
+        )
+        # $CODE_END
+
+        # Save and append the raw chunk `if not data_query_cache_exists`
+        # $CODE_BEGIN
+        # 🎯 HINT: we want a CSV with headers this time
+        # 🎯 HINT: only the first chunk should store headers
         if not data_query_cache_exists:
-            chunk.to_csv(data_query_cache_path,
-                         mode='w' if chunk_id==0 else 'a',
-                         header=True if chunk_id==0 else False,
-                         index=False)
+            chunk.to_csv(
+                data_query_cache_path,
+                mode="w" if chunk_id==0 else "a",
+                header=True if chunk_id==0 else False,
+                index=False
+            )
+        # $CODE_END
+
     print(f"✅ data query saved as {data_query_cache_path}")
     print("✅ preprocess() done")
-
 def train(min_date:str = '2009-01-01', max_date:str = '2015-01-01') -> None:
     """
     Incremental train on the (already preprocessed) dataset locally stored.
